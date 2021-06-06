@@ -1,0 +1,50 @@
+packages:
+  - name: hexchat
+    source:
+      subdir: 'ports'
+      git: 'https://github.com/hexchat/hexchat.git'
+      tag: 'v2.14.3'
+      version: '2.14.3'
+    tools_required:
+      - system-gcc
+      - virtual: pkgconfig-for-target
+        triple: "@OPTION:arch-triple@"
+    pkgs_required:
+      - glib
+      - gdk-pixbuf
+      - gtk+-2
+      - pango
+      - libx11
+      - openssl
+    configure:
+      - args:
+        - 'meson'
+        - '--cross-file'
+        - '@SOURCE_ROOT@/scripts/meson-@OPTION:arch-triple@.cross-file'
+        - '--prefix=/usr'
+        - '--libdir=lib'
+        - '--buildtype=debugoptimized'
+        - '-Dwith-gtk=true'
+        - '-Dwith-text=false'
+        - '-Dwith-ssl=true'
+        - '-Dwith-plugin=true'
+        - '-Dwith-dbus=false'
+        - '-Dwith-libproxy=false'
+        - '-Dwith-libcanberra=false'
+        - '-Dwith-libnotify=false'
+        - '-Dwith-theme-manager=false'
+        - '-Ddbus-service-use-appid=false'
+        - '-Dwith-checksum=false'
+        - '-Dwith-fishlim=false'
+        - '-Dwith-lua=false'
+        - '-Dwith-perl=false'
+        - '-Dwith-python=false'
+        - '-Dwith-sysinfo=false'
+        - '-Dwith-appdata=false'
+        - '@THIS_SOURCE_DIR@'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+        quiet: true
