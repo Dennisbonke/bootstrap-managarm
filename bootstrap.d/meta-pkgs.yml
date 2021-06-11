@@ -1,6 +1,13 @@
 packages:
   # Meta package with the bare minimum to boot kmscon and be useful
   - name: base
+    metadata:
+      summary: Minimum meta-package to provide a useful environment
+      description: This meta-package provides a useful terminal only environment with various common unix tools and the xbps package manager.
+      spdx: 'MIT'
+      website: 'https://managarm.org'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
+      categories: ['meta-pkgs']
     labels: [aarch64]
     from_source: managarm
     pkgs_required:
@@ -36,6 +43,13 @@ packages:
 
   # Meta package with build essentials
   - name: base-devel
+    metadata:
+      summary: Meta-package to provide common development utilities
+      description: This meta-package provides a set of commonly used development utilities, including the gcc compiler and GNU Make.
+      spdx: 'MIT'
+      website: 'https://managarm.org'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
+      categories: ['meta-pkgs']
     from_source: managarm
     pkgs_required:
       - base
@@ -53,6 +67,13 @@ packages:
 
   # Meta package for weston and usefull utilities
   - name: weston-desktop
+    metadata:
+      summary: Meta-package to provide a useful GUI environment (Weston)
+      description: This meta-package provides a GUI environment based on the Weston compositor and various small X based utilities.
+      spdx: 'MIT'
+      website: 'https://managarm.org'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
+      categories: ['meta-pkgs']
     from_source: managarm
     pkgs_required:
       - base

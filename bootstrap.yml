@@ -584,6 +584,13 @@ tools:
 
 packages:
   - name: binutils
+    metadata:
+      summary: Tools necessary to build programs
+      description: This package provides various tools commonly used during package development, including the GNU linker and the GNU assembler. This package also includes libbfd and libopcodes.
+      spdx: 'GPL-3+'
+      website: 'https://www.gnu.org/software/binutils/'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
+      categories: ['sys-devel']
     from_source: binutils
     tools_required:
       - tool: system-gcc
@@ -609,6 +616,13 @@ packages:
         quiet: true
 
   - name: boost
+    metadata:
+      summary: Boost development headers
+      description: This package provides the Boost headers for C++.
+      spdx: 'Boost-1.0'
+      website: 'https://boost.org'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
+      categories: ['dev-libs']
     labels: [aarch64]
     source:
       subdir: 'ports'
@@ -630,6 +644,13 @@ packages:
             '@THIS_COLLECT_DIR@/usr/include']
 
   - name: core-files
+    metadata:
+      summary: Managarm base filesystem layout
+      description: This package provides the base filesystem layout that Managarm uses, includes various directories, essential files and symlinks.
+      spdx: 'MIT'
+      website: 'https://managarm.org'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
+      categories: ['sys-apps']
     labels: [aarch64]
     default: true
     from_source: managarm
