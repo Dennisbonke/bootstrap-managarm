@@ -1182,6 +1182,13 @@ packages:
         quiet: true
 
   - name: zlib
+    metadata:
+      summary: Standard (de)compression library
+      description: This package provides some common compression and decompression functions used by various programs.
+      spdx: 'ZLIB'
+      website: 'https://zlib.net'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
+      categories: ['sys-libs']
     labels: [aarch64]
     source:
       subdir: 'ports'
