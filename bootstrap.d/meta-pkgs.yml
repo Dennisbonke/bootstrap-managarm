@@ -32,6 +32,7 @@ packages:
       - findutils
       - util-linux
       - limine
+      - man-db
     configure: []
     build: []
 
@@ -49,6 +50,7 @@ packages:
       - pkg-config
       - cmake
       - bc
+      - man-pages-posix
     configure: []
     build: []
 
