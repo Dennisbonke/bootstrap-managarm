@@ -1,0 +1,64 @@
+From 512a7080e61b08eabdc85271ec36da79e326bdcd Mon Sep 17 00:00:00 2001
+From: Dennis Bonke <admin@dennisbonke.com>
+Date: Thu, 15 Jul 2021 02:53:59 +0200
+Subject: [PATCH 3/3] Work around unimplemented Managarm features
+
+Signed-off-by: Dennis Bonke <admin@dennisbonke.com>
+---
+ bin/xbps-install/question.c | 4 ++--
+ lib/fetch/http.c            | 8 ++++----
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/bin/xbps-install/question.c b/bin/xbps-install/question.c
+index 865649ff..f2d6e9b4 100644
+--- a/bin/xbps-install/question.c
++++ b/bin/xbps-install/question.c
+@@ -50,7 +50,7 @@ question(bool preset, const char *fmt, va_list ap)
+ 		fputs(" [y/N] ", stderr);
+ 
+ 	response = fgetc(stdin);
+-	if (response == '\n')
++	if (response == '\n' || response == '\r')
+ 		rv = preset;
+ 	else if (response == 'y' || response == 'Y')
+ 		rv = true;
+@@ -58,7 +58,7 @@ question(bool preset, const char *fmt, va_list ap)
+ 		rv = false;
+ 
+ 	/* read the rest of the line */
+-	while (response != EOF && response != '\n')
++	while (response != EOF && (response != '\n' && response != '\r'))
+ 		response = fgetc(stdin);
+ 
+ 	return rv;
+diff --git a/lib/fetch/http.c b/lib/fetch/http.c
+index a50128ca..d29c755b 100644
+--- a/lib/fetch/http.c
++++ b/lib/fetch/http.c
+@@ -508,19 +508,19 @@ http_next_header(conn_t *conn, const char **p)
+ static int
+ http_parse_mtime(const char *p, time_t *mtime)
+ {
+-	char locale[64], *r;
++	char locale[64], *r = NULL;
+ 	struct tm tm;
+ 
+ 	strncpy(locale, setlocale(LC_TIME, NULL), sizeof(locale)-1);
+ 	locale[sizeof(locale)-1] = '\0';
+ 	setlocale(LC_TIME, "C");
+-	r = strptime(p, "%a, %d %b %Y %H:%M:%S GMT", &tm);
++	//r = strptime(p, "%a, %d %b %Y %H:%M:%S GMT", &tm);
+ 	/*
+ 	 * Some proxies use UTC in response, but it should still be
+ 	 * parsed. RFC2616 states GMT and UTC are exactly equal for HTTP.
+ 	 */
+-	if (r == NULL)
+-		r = strptime(p, "%a, %d %b %Y %H:%M:%S UTC", &tm);
++	//if (r == NULL)
++	//	r = strptime(p, "%a, %d %b %Y %H:%M:%S UTC", &tm);
+ 	/* XXX should add support for date-2 and date-3 */
+ 	setlocale(LC_TIME, locale);
+ 	if (r == NULL)
+-- 
+2.32.0
+
