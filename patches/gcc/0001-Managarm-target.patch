@@ -1,9 +1,10 @@
-From 57ceba3e24468a6277926a3d7d62f8b2094030cb Mon Sep 17 00:00:00 2001
+From 202eccc71805eb2549ad596b5bbbf6bba7dfc635 Mon Sep 17 00:00:00 2001
 From: Dennis Bonke <admin@dennisbonke.com>
 Date: Tue, 13 Apr 2021 21:20:52 +0200
-Subject: [PATCH] Managarm target
+Subject: [PATCH 1/2] Managarm target
 
 TODO: Use libtoolize instead of modifying in-tree libtool?
+Signed-off-by: Dennis Bonke <admin@dennisbonke.com>
 ---
  config.sub                                  | 11 +++-
  fixincludes/mkfixinc.sh                     |  1 +
@@ -564,5 +565,5 @@ index 17f8e5f30..a934226d3 100644
    if echo __ELF__ | $CC -E - | $GREP __ELF__ > /dev/null; then
      lt_cv_deplibs_check_method='match_pattern /lib[[^/]]+(\.so\.[[0-9]]+\.[[0-9]]+|_pic\.a)$'
 -- 
-2.20.1
+2.34.0
 

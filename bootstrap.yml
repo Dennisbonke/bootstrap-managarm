@@ -117,12 +117,29 @@ sources:
     version: '11.1.0'
     tools_required:
       - host-autoconf-v2.69
-      - host-automake-v1.11
+      - host-automake-v1.15
+      - host-libtool
     regenerate:
+      # autoreconf messes with our config.sub, back it up and restore it.
+      - args: |
+              if ! [ -f config.sub.bak ]; then
+                  cp -v config.sub config.sub.bak
+              fi
       - args: ['autoconf']
         workdir: '@THIS_SOURCE_DIR@/gcc'
-      - args: ['autoconf']
+      - args: ['autoreconf', '-fvi']
+        workdir: '@THIS_SOURCE_DIR@/lto-plugin'
+      - args: ['autoreconf', '-fvi']
         workdir: '@THIS_SOURCE_DIR@/libstdc++-v3'
+      - args: ['autoreconf', '-fvi']
+        workdir: '@THIS_SOURCE_DIR@/libsanitizer'
+      - args: ['autoreconf', '-fvi']
+        workdir: '@THIS_SOURCE_DIR@/libbacktrace'
+      # Copy over a known working copy to avoid configure issues
+      - args: ['cp',
+          '@BUILD_ROOT@/tools/host-automake-v1.15/share/automake-1.15/depcomp',
+          '@THIS_SOURCE_DIR@/']
+      - args: ['cp', '@THIS_SOURCE_DIR@/config.sub.bak', '@THIS_SOURCE_DIR@/config.sub']
 
   - name: protobuf
     subdir: 'ports'
@@ -528,6 +545,14 @@ tools:
           - args: ['make', '-j@PARALLELISM@', 'all-target-libstdc++-v3']
         install:
           - args: ['make', 'install-target-libstdc++-v3']
+      - name: libsanitizers
+        tools_required:
+          - tool: system-gcc
+            stage_dependencies: [libstdc++]
+        compile:
+          - args: ['make', '-j@PARALLELISM@', 'all-target-libsanitizer']
+        install:
+          - args: ['make', 'install-target-libsanitizer']
 
   - name: bootstrap-system-gcc
     labels: [aarch64]
@@ -774,14 +799,16 @@ packages:
     architecture: '@OPTION:arch@'
     from_source: gcc
     tools_required:
-      - tool: system-gcc
       - host-automake-v1.15
+      - host-libtool
+      - system-gcc
     pkgs_required:
       - mlibc
       - gmp
       - mpfr
       - mpc
       - zlib
+    revision: 2
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
@@ -796,12 +823,13 @@ packages:
         - '--disable-nls'
         - '--enable-lto'
         - '--with-system-zlib'
+        - '--enable-libstdcxx-filesystem-ts'
         # -g blows up GCC's binary size.
         - 'CFLAGS=-O2'
         - 'CXXFLAGS=-O2'
     build:
-      - args: ['make', 'all-gcc', 'all-target-libgcc', 'all-target-libstdc++-v3', '-j@PARALLELISM@']
-      - args: ['make', 'install-gcc', 'install-target-libgcc', 'install-target-libstdc++-v3']
+      - args: ['make', 'all-gcc', 'all-target-libgcc', 'all-target-libstdc++-v3', 'all-target-libsanitizer', '-j@PARALLELISM@']
+      - args: ['make', 'install-gcc', 'install-target-libgcc', 'install-target-libstdc++-v3', 'install-target-libsanitizer']
         environ:
           DESTDIR: '@THIS_COLLECT_DIR@'
         quiet: true

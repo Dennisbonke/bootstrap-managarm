@@ -1,0 +1,830 @@
+From 21118773ad67e0a339d56e0d80edb567ab1d2463 Mon Sep 17 00:00:00 2001
+From: Dennis Bonke <admin@dennisbonke.com>
+Date: Wed, 24 Nov 2021 08:43:32 +0100
+Subject: [PATCH 2/2] Add Managarm support for ubsan
+
+Signed-off-by: Dennis Bonke <admin@dennisbonke.com>
+---
+ config.sub                                    |  11 +-
+ gcc/config.gcc                                |  14 +-
+ .../{managarm-system.h => managarm-mlibc.h}   |   0
+ libsanitizer/Makefile.am                      |   9 +-
+ libsanitizer/configure.tgt                    |   2 +
+ libsanitizer/sanitizer_common/Makefile.am     |   1 +
+ .../sanitizer_common/sanitizer_errno.h        |   9 +
+ .../sanitizer_common/sanitizer_errno_codes.h  |   7 +
+ .../sanitizer_internal_defs.h                 |   2 +-
+ .../sanitizer_common/sanitizer_managarm.cpp   | 376 ++++++++++++++++++
+ .../sanitizer_common/sanitizer_platform.h     |  13 +-
+ .../sanitizer_platform_limits_posix.h         |   4 +-
+ .../sanitizer_common/sanitizer_posix.cpp      |   3 +-
+ .../sanitizer_posix_libcdep.cpp               |   9 +-
+ .../sanitizer_common/sanitizer_procmaps.h     |  16 +-
+ .../sanitizer_procmaps_common.cpp             |   8 +-
+ libsanitizer/ubsan/Makefile.am                |   6 +-
+ 17 files changed, 462 insertions(+), 28 deletions(-)
+ rename gcc/config/{managarm-system.h => managarm-mlibc.h} (100%)
+ create mode 100644 libsanitizer/sanitizer_common/sanitizer_managarm.cpp
+
+diff --git a/config.sub b/config.sub
+index 033763b58..c092281f8 100755
+--- a/config.sub
++++ b/config.sub
+@@ -131,11 +131,10 @@ case $1 in
+ 		# parts
+ 		maybe_os=$field2-$field3
+ 		case $maybe_os in
+-			nto-qnx* | linux-* | uclinux-uclibc* \
+-			| uclinux-gnu* | managarm-kernel* | managarm-system* \
++			nto-qnx* | linux-* | uclinux-uclibc* | uclinux-gnu* \
+ 			| kfreebsd*-gnu* | knetbsd*-gnu* | netbsd*-gnu* \
+ 			| netbsd*-eabi* | kopensolaris*-gnu* | cloudabi*-eabi* \
+-			| storm-chaos* | os2-emx* | rtmk-nova*)
++			| storm-chaos* | os2-emx* | rtmk-nova* | managarm-*)
+ 				basic_machine=$field1
+ 				basic_os=$maybe_os
+ 				;;
+@@ -1316,7 +1315,7 @@ EOF
+ 		;;
+ 	managarm*)
+ 		kernel=managarm
+-		os=$(echo $basic_os | sed -e 's|managarm|system|')
++		os=$(echo $basic_os | sed -e 's|managarm|mlibc|')
+ 		;;
+ 	*)
+ 		kernel=
+@@ -1730,7 +1729,7 @@ case $os in
+ 	     | skyos* | haiku* | rdos* | toppers* | drops* | es* \
+ 	     | onefs* | tirtos* | phoenix* | fuchsia* | redox* | bme* \
+ 	     | midnightbsd* | amdhsa* | unleashed* | emscripten* | wasi* \
+-	     | nsk* | powerunix* | genode* | zvmoe* | qnx* | emx* | kernel* | system*)
++	     | nsk* | powerunix* | genode* | zvmoe* | qnx* | emx* | kernel* | mlibc*)
+ 		;;
+ 	# This one is extra strict with allowed versions
+ 	sco3.2v2 | sco3.2v[4-9]* | sco5v6*)
+@@ -1749,7 +1748,7 @@ esac
+ case $kernel-$os in
+ 	linux-gnu* | linux-dietlibc* | linux-android* | linux-newlib* | linux-musl* | linux-uclibc* )
+ 		;;
+-	managarm-kernel* | managarm-system* )
++	managarm-kernel* | managarm-mlibc* )
+ 		;;
+ 	uclinux-uclibc* )
+ 		;;
+diff --git a/gcc/config.gcc b/gcc/config.gcc
+index 570049be8..c6517a934 100644
+--- a/gcc/config.gcc
++++ b/gcc/config.gcc
+@@ -893,7 +893,7 @@ case ${target} in
+   use_gcc_stdint=wrap
+ 
+   case ${target} in
+-  *-managarm-system*)
++  *-managarm-mlibc*)
+     tmake_file="${tmake_file} t-slibgcc"
+     thread_file='posix'
+     ;;
+@@ -1187,8 +1187,8 @@ aarch64*-*-managarm*)
+ 	tmake_file="${tmake_file} aarch64/t-aarch64 aarch64/t-aarch64-managarm"
+ 	tm_defines="${tm_defines}  TARGET_DEFAULT_ASYNC_UNWIND_TABLES=1"
+ 	case ${target} in
+-	*-managarm-system*)
+-		tm_file="${tm_file} managarm-system.h"
++	*-managarm-mlibc*)
++		tm_file="${tm_file} managarm-mlibc.h"
+ 		;;
+ 	*-managarm-kernel*)
+ 		tm_file="${tm_file} managarm-kernel.h"
+@@ -2083,8 +2083,8 @@ x86_64-*-managarm*)
+ 		 i386/x86-64.h i386/gnu-user-common.h i386/gnu-user64.h managarm.h i386/i386-managarm.h"
+ 
+ 	case ${target} in
+-	*-managarm-system*)
+-		tm_file="${tm_file} managarm-system.h"
++	*-managarm-mlibc*)
++		tm_file="${tm_file} managarm-mlibc.h"
+ 		;;
+ 	*-managarm-kernel*)
+ 		tm_file="${tm_file} managarm-kernel.h"
+@@ -2545,8 +2545,8 @@ riscv*-*-managarm*)
+ 	tm_file="${tm_file} riscv/managarm.h"
+ 	tmake_file="${tmake_file} riscv/t-riscv riscv/t-managarm"
+ 	case ${target} in
+-	*-managarm-system*)
+-		tm_file="${tm_file} managarm-system.h"
++	*-managarm-mlibc*)
++		tm_file="${tm_file} managarm-mlibc.h"
+ 		;;
+ 	*-managarm-kernel*)
+ 		tm_file="${tm_file} managarm-kernel.h"
+diff --git a/gcc/config/managarm-system.h b/gcc/config/managarm-mlibc.h
+similarity index 100%
+rename from gcc/config/managarm-system.h
+rename to gcc/config/managarm-mlibc.h
+diff --git a/libsanitizer/Makefile.am b/libsanitizer/Makefile.am
+index 065a65e78..5c0252a16 100644
+--- a/libsanitizer/Makefile.am
++++ b/libsanitizer/Makefile.am
+@@ -8,13 +8,14 @@ if SANITIZER_SUPPORTED
+ SUBDIRS = sanitizer_common
+ nodist_saninclude_HEADERS += \
+   include/sanitizer/common_interface_defs.h
+-if !USING_MAC_INTERPOSE
+-SUBDIRS += interception
+-endif
++#if !USING_MAC_INTERPOSE
++#SUBDIRS += interception
++#endif
+ if LIBBACKTRACE_SUPPORTED
+ SUBDIRS += libbacktrace
+ endif
+-SUBDIRS += lsan asan ubsan
++#SUBDIRS += lsan asan ubsan
++SUBDIRS += ubsan
+ nodist_saninclude_HEADERS += \
+   include/sanitizer/lsan_interface.h \
+   include/sanitizer/asan_interface.h \
+diff --git a/libsanitizer/configure.tgt b/libsanitizer/configure.tgt
+index 0ca5d9fd9..201f0aed9 100644
+--- a/libsanitizer/configure.tgt
++++ b/libsanitizer/configure.tgt
+@@ -31,6 +31,8 @@ case "${target}" in
+ 		TSAN_TARGET_DEPENDENT_OBJECTS=tsan_rtl_amd64.lo
+ 	fi
+ 	;;
++	x86_64-*-managarm*)
++	;;
+   powerpc*-*-linux*)
+ 	if test x$ac_cv_sizeof_void_p = x8; then
+ 		TSAN_SUPPORTED=yes
+diff --git a/libsanitizer/sanitizer_common/Makefile.am b/libsanitizer/sanitizer_common/Makefile.am
+index 7cba53426..59d37f392 100644
+--- a/libsanitizer/sanitizer_common/Makefile.am
++++ b/libsanitizer/sanitizer_common/Makefile.am
+@@ -41,6 +41,7 @@ sanitizer_common_files = \
+ 	sanitizer_linux_s390.cpp \
+ 	sanitizer_mac.cpp \
+ 	sanitizer_mac_libcdep.cpp \
++	sanitizer_managarm.cpp \
+ 	sanitizer_netbsd.cpp \
+ 	sanitizer_openbsd.cpp \
+ 	sanitizer_persistent_allocator.cpp \
+diff --git a/libsanitizer/sanitizer_common/sanitizer_errno.h b/libsanitizer/sanitizer_common/sanitizer_errno.h
+index 94f16b6e8..f78825190 100644
+--- a/libsanitizer/sanitizer_common/sanitizer_errno.h
++++ b/libsanitizer/sanitizer_common/sanitizer_errno.h
+@@ -21,6 +21,8 @@
+ #include "sanitizer_errno_codes.h"
+ #include "sanitizer_platform.h"
+ 
++#ifndef SANITIZER_MANAGARM
++
+ #if SANITIZER_FREEBSD || SANITIZER_MAC
+ #  define __errno_location __error
+ #elif SANITIZER_ANDROID || SANITIZER_NETBSD || \
+@@ -30,10 +32,17 @@
+ #  define __errno_location ___errno
+ #elif SANITIZER_WINDOWS
+ #  define __errno_location _errno
++#elif SANITIZER_MANAGARM
++#include <errno.h>
++#  define __errno_location errno
+ #endif
+ 
+ extern "C" int *__errno_location();
+ 
+ #define errno (*__errno_location())
+ 
++#elif SANITIZER_MANAGARM
++#include <errno.h>
++#endif
++
+ #endif  // SANITIZER_ERRNO_H
+diff --git a/libsanitizer/sanitizer_common/sanitizer_errno_codes.h b/libsanitizer/sanitizer_common/sanitizer_errno_codes.h
+index 192e9392d..7e31e96d6 100644
+--- a/libsanitizer/sanitizer_common/sanitizer_errno_codes.h
++++ b/libsanitizer/sanitizer_common/sanitizer_errno_codes.h
+@@ -21,10 +21,17 @@
+ 
+ namespace __sanitizer {
+ 
++#ifndef __managarm__
+ #define errno_ENOMEM 12
+ #define errno_EBUSY 16
+ #define errno_EINVAL 22
+ #define errno_ENAMETOOLONG 36
++#else
++#define errno_ENOMEM 1047
++#define errno_EBUSY 1010
++#define errno_EINVAL 1026
++#define errno_ENAMETOOLONG 1036
++#endif
+ 
+ // Those might not present or their value differ on different platforms.
+ extern const int errno_EOWNERDEAD;
+diff --git a/libsanitizer/sanitizer_common/sanitizer_internal_defs.h b/libsanitizer/sanitizer_common/sanitizer_internal_defs.h
+index d8f054003..30cf0bfbe 100644
+--- a/libsanitizer/sanitizer_common/sanitizer_internal_defs.h
++++ b/libsanitizer/sanitizer_common/sanitizer_internal_defs.h
+@@ -168,7 +168,7 @@ typedef long pid_t;
+ typedef int pid_t;
+ #endif
+ 
+-#if SANITIZER_FREEBSD || SANITIZER_NETBSD || \
++#if SANITIZER_FREEBSD || SANITIZER_NETBSD || SANITIZER_MANAGARM || \
+     SANITIZER_MAC || \
+     (SANITIZER_SOLARIS && (defined(_LP64) || _FILE_OFFSET_BITS == 64)) || \
+     (SANITIZER_LINUX && defined(__x86_64__))
+diff --git a/libsanitizer/sanitizer_common/sanitizer_managarm.cpp b/libsanitizer/sanitizer_common/sanitizer_managarm.cpp
+new file mode 100644
+index 000000000..f56983c16
+--- /dev/null
++++ b/libsanitizer/sanitizer_common/sanitizer_managarm.cpp
+@@ -0,0 +1,376 @@
++#include "sanitizer_platform.h"
++
++#if SANITIZER_MANAGARM
++
++#include "sanitizer_common.h"
++#include "sanitizer_internal_defs.h"
++#include "sanitizer_libc.h"
++#include "sanitizer_stacktrace.h"
++#include "sanitizer_procmaps.h"
++
++#include <sys/mman.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <sched.h>
++#include <errno.h>
++#include <assert.h>
++#include <stdlib.h>
++#include <sys/wait.h>
++#include <signal.h>
++#include <stdio.h>
++
++namespace __sanitizer {
++
++// 1 and 2 respectively on linux, defined in siginfo-consts.h
++// const int si_SEGV_MAPERR = 1;
++// const int si_SEGV_ACCERR = 2;
++
++uptr internal_mmap(void *addr, uptr length, int prot, int flags, int fd,
++               u64 offset) {
++	return (uptr)mmap(addr, length, prot, flags, fd, offset);
++}
++
++uptr internal_munmap(void *addr, uptr length) {
++	return munmap(addr, length);
++}
++
++int internal_mprotect(void *addr, uptr length, int prot) {
++	return mprotect(addr, length, prot);
++}
++
++// Unimplemented, return ok
++int internal_madvise(uptr addr, uptr length, int advice) {
++	return 0;
++	// return madvise(addr, length, advice);
++}
++
++uptr internal_close(fd_t fd) {
++	return close(fd);
++}
++
++uptr internal_open(const char *filename, int flags, u32 mode) {
++	return open(filename, flags, mode);
++}
++
++uptr internal_sched_yield() {
++	return sched_yield();
++}
++
++// Small hack, see linux on how to do this _properly_.
++uptr ReadBinaryName(/*out*/char *buf, uptr buf_len) {
++  // if (IsErr) {
++  //   // We can't read binary name for some reason, assume it's unknown.
++  //   Report("WARNING: reading executable name failed with errno %d, "
++  //          "some stack frames may not be symbolized\n", readlink_error);
++    uptr module_name_len = internal_snprintf(buf, buf_len, "%s",
++                                        program_invocation_short_name);
++    CHECK_LT(module_name_len, buf_len);
++  // }
++  return module_name_len;
++}
++
++uptr ReadLongProcessName(/*out*/ char *buf, uptr buf_len) {
++	return ReadBinaryName(buf, buf_len);
++}
++
++// HACK: Massive hack! Fix asap recommended
++bool internal_iserror(uptr retval, int *rverrno) {
++  // if (retval >= (uptr)-4095) {
++  //   if (rverrno)
++  //     *rverrno = -retval;
++    return false;
++  // }
++  // return false;
++}
++
++uptr GetPageSize() {
++	return sysconf(_SC_PAGESIZE);
++}
++
++// Lazy
++const char *GetEnv(const char *name) {
++	return nullptr;
++}
++
++static void GetArgsAndEnv(char ***argv, char ***envp) {
++// #if SANITIZER_FREEBSD
++//   // On FreeBSD, retrieving the argument and environment arrays is done via the
++//   // kern.ps_strings sysctl, which returns a pointer to a structure containing
++//   // this information. See also <sys/exec.h>.
++//   ps_strings *pss;
++//   uptr sz = sizeof(pss);
++//   if (internal_sysctlbyname("kern.ps_strings", &pss, &sz, NULL, 0) == -1) {
++//     Printf("sysctl kern.ps_strings failed\n");
++//     Die();
++//   }
++//   *argv = pss->ps_argvstr;
++//   *envp = pss->ps_envstr;
++// #elif SANITIZER_NETBSD
++//   *argv = __ps_strings->ps_argvstr;
++//   *envp = __ps_strings->ps_envstr;
++// #else // SANITIZER_FREEBSD
++// #if !SANITIZER_GO
++//   if (&__libc_stack_end) {
++//     uptr* stack_end = (uptr*)__libc_stack_end;
++//     // Normally argc can be obtained from *stack_end, however, on ARM glibc's
++//     // _start clobbers it:
++//     // https://sourceware.org/git/?p=glibc.git;a=blob;f=sysdeps/arm/start.S;hb=refs/heads/release/2.31/master#l75
++//     // Do not special-case ARM and infer argc from argv everywhere.
++//     int argc = 0;
++//     while (stack_end[argc + 1]) argc++;
++//     *argv = (char**)(stack_end + 1);
++//     *envp = (char**)(stack_end + argc + 2);
++//   } else {
++// #endif // !SANITIZER_GO
++//     static const int kMaxArgv = 2000, kMaxEnvp = 2000;
++//     ReadNullSepFileToArray("/proc/self/cmdline", argv, kMaxArgv);
++//     ReadNullSepFileToArray("/proc/self/environ", envp, kMaxEnvp);
++// #if !SANITIZER_GO
++//   }
++// #endif // !SANITIZER_GO
++// #endif // SANITIZER_FREEBSD
++}
++
++// HACK: Does some funny memes that we don't implement, proc infrastructure missing.
++char **GetArgv() {
++	return nullptr;
++	// char **argv, **envp;
++	// GetArgsAndEnv(&argv, &envp);
++	// return argv;
++}
++
++char **GetEnviron() {
++	// char **argv, **envp;
++	// GetArgsAndEnv(&argv, &envp);
++	// return envp;
++	return nullptr;
++}
++
++enum MutexState {
++  MtxUnlocked = 0,
++  MtxLocked = 1,
++  MtxSleeping = 2
++};
++
++BlockingMutex::BlockingMutex() {
++  internal_memset(this, 0, sizeof(*this));
++}
++
++// HACK: No futex stuff yet
++void BlockingMutex::Lock() {
++  CHECK_EQ(owner_, 0);
++  atomic_uint32_t *m = reinterpret_cast<atomic_uint32_t *>(&opaque_storage_);
++  if (atomic_exchange(m, MtxLocked, memory_order_acquire) == MtxUnlocked)
++    return;
++  while (atomic_exchange(m, MtxSleeping, memory_order_acquire) != MtxUnlocked) {
++#if SANITIZER_FREEBSD
++    _umtx_op(m, UMTX_OP_WAIT_UINT, MtxSleeping, 0, 0);
++#elif SANITIZER_NETBSD || SANITIZER_MANAGARM
++    sched_yield(); /* No userspace futex-like synchronization */
++#else
++    internal_syscall(SYSCALL(futex), (uptr)m, FUTEX_WAIT_PRIVATE, MtxSleeping,
++                     0, 0, 0);
++#endif
++  }
++}
++
++void BlockingMutex::Unlock() {
++  atomic_uint32_t *m = reinterpret_cast<atomic_uint32_t *>(&opaque_storage_);
++  u32 v = atomic_exchange(m, MtxUnlocked, memory_order_release);
++  CHECK_NE(v, MtxUnlocked);
++  if (v == MtxSleeping) {
++#if SANITIZER_FREEBSD
++    _umtx_op(m, UMTX_OP_WAKE, 1, 0, 0);
++#elif SANITIZER_NETBSD || SANITIZER_MANAGARM
++                   /* No userspace futex-like synchronization */
++#else
++    internal_syscall(SYSCALL(futex), (uptr)m, FUTEX_WAKE_PRIVATE, 1, 0, 0, 0);
++#endif
++  }
++}
++
++void BlockingMutex::CheckLocked() {
++  atomic_uint32_t *m = reinterpret_cast<atomic_uint32_t *>(&opaque_storage_);
++  CHECK_NE(MtxUnlocked, atomic_load(m, memory_order_relaxed));
++}
++
++uptr internal_stat(const char *path, void *buf) {
++  return fstatat(AT_FDCWD, path, (struct stat *)buf, 0);
++}
++
++uptr internal_fstat(fd_t fd, void *buf) {
++  return fstat(fd, (struct stat *)buf);
++}
++
++uptr internal_filesize(fd_t fd) {
++  struct stat st;
++  if (internal_fstat(fd, &st))
++    return -1;
++  return (uptr)st.st_size;
++}
++
++uptr internal_dup(int oldfd) {
++  return dup(oldfd);
++}
++
++// HACK: Honestly don't remember why, but we don't mock failures (yet)
++bool FileExists(const char *filename) {
++  // if (ShouldMockFailureToOpen(filename))
++  //   return false;
++  struct stat st;
++  if (internal_stat(filename, &st))
++    return false;
++  // Sanity check: filename is a regular file.
++  return S_ISREG(st.st_mode);
++}
++
++int internal_fork() {
++  return fork();
++}
++
++uptr internal_read(fd_t fd, void *buf, uptr count) {
++  sptr res;
++  res = read(fd, buf, count);
++  return res;
++}
++
++uptr internal_write(fd_t fd, const void *buf, uptr count) {
++  sptr res;
++  res = write(fd, buf, count);
++  return res;
++}
++
++uptr internal_waitpid(int pid, int *status, int options) {
++  return wait4(pid, status, options, 0 /* rusage */);
++}
++
++uptr internal_getpid() {
++  return getpid();
++}
++
++void internal__exit(int exitcode) {
++  exit(exitcode);
++  Die();  // Unreachable.
++}
++
++uptr internal_dup2(int oldfd, int newfd) {
++  return dup2(oldfd, newfd);
++}
++
++int internal_sigaction(int signum, const void *act, void *oldact) {
++	return sigaction(signum, (const struct sigaction *)act, (struct sigaction *)oldact);
++}
++
++uptr internal_execve(const char *filename, char *const argv[], char *const envp[]) {
++  return execve(filename, argv, envp);
++}
++
++// HACK: Managarm doesn't have the infrastructure, patch it out for now.
++void ListOfModules::init() {
++#if 0
++  clearOrInit();
++  if (requiresProcmaps()) {
++    procmapsInit(&modules_);
++  } else {
++    DlIteratePhdrData data = {&modules_, true};
++    dl_iterate_phdr(dl_iterate_phdr_cb, &data);
++  }
++#endif
++}
++
++// When a custom loader is used, dl_iterate_phdr may not contain the full
++// list of modules. Allow callers to fall back to using procmaps.
++// HACK: Managarm doesn't have the infrastructure, patch it out for now.
++void ListOfModules::fallbackInit() {
++#if 0
++  if (!requiresProcmaps()) {
++    clearOrInit();
++    procmapsInit(&modules_);
++  } else {
++    clear();
++  }
++#endif
++}
++
++void GetThreadStackTopAndBottom(bool at_initialization, uptr *stack_top, uptr *stack_bottom) {
++
++}
++
++static HandleSignalMode GetHandleSignalModeImpl(int signum) {
++  switch (signum) {
++    case SIGABRT:
++      return common_flags()->handle_abort;
++    case SIGILL:
++      return common_flags()->handle_sigill;
++    case SIGTRAP:
++      return common_flags()->handle_sigtrap;
++    case SIGFPE:
++      return common_flags()->handle_sigfpe;
++    case SIGSEGV:
++      return common_flags()->handle_segv;
++    case SIGBUS:
++      return common_flags()->handle_sigbus;
++  }
++  return kHandleSignalNo;
++}
++
++HandleSignalMode GetHandleSignalMode(int signum) {
++  HandleSignalMode result = GetHandleSignalModeImpl(signum);
++  if (result == kHandleSignalYes && !common_flags()->allow_user_segv_handler)
++    return kHandleSignalExclusive;
++  return result;
++}
++
++bool SignalContext::IsTrueFaultingAddress() const {
++  auto si = static_cast<const siginfo_t *>(siginfo);
++  // SIGSEGV signals without a true fault address have si_code set to 128.
++  return si->si_signo == SIGSEGV && si->si_code != 128;
++}
++
++void InitializePlatformEarly() {
++  // Do nothing.
++}
++
++void InitializePlatformCommonFlags(CommonFlags *cf) {
++
++}
++
++// using Context = ucontext_t;
++
++SignalContext::WriteFlag SignalContext::GetWriteFlag() const {
++  // Context *ucontext = (Context *)context;
++  // (void)ucontext;
++  return UNKNOWN;  // FIXME: Implement.
++}
++
++void SignalContext::DumpAllRegisters(void *context) {
++  // FIXME: Implement this.
++}
++
++void SignalContext::InitPcSpBp() {
++	// Not implemented
++}
++
++uptr GetTlsSize() {
++	// Not implemented
++	return 4096;
++}
++
++void BufferedStackTrace::UnwindSlow(uptr pc, void *context, u32 max_depth) {
++	// Not implemented
++}
++
++void BufferedStackTrace::UnwindSlow(uptr pc, u32 max_depth) {
++	// Not implemented
++}
++
++bool MemoryMappingLayout::Next(MemoryMappedSegment *segment) {
++	// Not implemented
++	return true;
++}
++
++}
++
++#endif
+diff --git a/libsanitizer/sanitizer_common/sanitizer_platform.h b/libsanitizer/sanitizer_common/sanitizer_platform.h
+index b2372a025..125b10995 100644
+--- a/libsanitizer/sanitizer_common/sanitizer_platform.h
++++ b/libsanitizer/sanitizer_common/sanitizer_platform.h
+@@ -15,7 +15,7 @@
+ #if !defined(__linux__) && !defined(__FreeBSD__) && !defined(__NetBSD__) && \
+   !defined(__APPLE__) && !defined(_WIN32) && \
+   !defined(__Fuchsia__) && !defined(__rtems__) && \
+-  !(defined(__sun__) && defined(__svr4__))
++  !(defined(__sun__) && defined(__svr4__)) && !defined(__managarm__)
+ # error "This operating system is not supported"
+ #endif
+ 
+@@ -25,6 +25,12 @@
+ # define SANITIZER_LINUX   0
+ #endif
+ 
++#if defined(__managarm__)
++# define SANITIZER_MANAGARM 1
++#else
++# define SANITIZER_MANAGARM 0
++#endif
++
+ #if defined(__FreeBSD__)
+ # define SANITIZER_FREEBSD 1
+ #else
+@@ -106,7 +112,7 @@
+ 
+ #define SANITIZER_POSIX \
+   (SANITIZER_FREEBSD || SANITIZER_LINUX || SANITIZER_MAC || \
+-    SANITIZER_NETBSD || SANITIZER_SOLARIS)
++    SANITIZER_NETBSD || SANITIZER_SOLARIS || SANITIZER_MANAGARM)
+ 
+ #if __LP64__ || defined(_WIN64)
+ #  define SANITIZER_WORDSIZE 64
+@@ -339,6 +345,9 @@
+ #if SANITIZER_FREEBSD || SANITIZER_MAC || SANITIZER_NETBSD || \
+   SANITIZER_SOLARIS
+ # define SANITIZER_MADVISE_DONTNEED MADV_FREE
++// HACK: Seems to work, but verify this
++#elif SANITIZER_MANAGARM
++# define SANITIZER_MADVISE_DONTNEED POSIX_MADV_DONTNEED
+ #else
+ # define SANITIZER_MADVISE_DONTNEED MADV_DONTNEED
+ #endif
+diff --git a/libsanitizer/sanitizer_common/sanitizer_platform_limits_posix.h b/libsanitizer/sanitizer_common/sanitizer_platform_limits_posix.h
+index 0812039b0..f9f1c3201 100644
+--- a/libsanitizer/sanitizer_common/sanitizer_platform_limits_posix.h
++++ b/libsanitizer/sanitizer_common/sanitizer_platform_limits_posix.h
+@@ -14,7 +14,7 @@
+ #ifndef SANITIZER_PLATFORM_LIMITS_POSIX_H
+ #define SANITIZER_PLATFORM_LIMITS_POSIX_H
+ 
+-#if SANITIZER_LINUX || SANITIZER_MAC
++#if SANITIZER_LINUX || SANITIZER_MAC || SANITIZER_MANAGARM
+ 
+ #include "sanitizer_internal_defs.h"
+ #include "sanitizer_platform.h"
+@@ -557,6 +557,8 @@ struct __sanitizer_sigset_t {
+   // The size is determined by looking at sizeof of real sigset_t on linux.
+   uptr val[128 / sizeof(uptr)];
+ };
++#elif SANITIZER_MANAGARM
++typedef long __sanitizer_sigset_t;
+ #endif
+ 
+ struct __sanitizer_siginfo {
+diff --git a/libsanitizer/sanitizer_common/sanitizer_posix.cpp b/libsanitizer/sanitizer_common/sanitizer_posix.cpp
+index 2e0800982..72cb00d36 100644
+--- a/libsanitizer/sanitizer_common/sanitizer_posix.cpp
++++ b/libsanitizer/sanitizer_common/sanitizer_posix.cpp
+@@ -27,7 +27,8 @@
+ #include <signal.h>
+ #include <sys/mman.h>
+ 
+-#if SANITIZER_FREEBSD
++// Managarm doesn't have this defined, define it here.
++#if SANITIZER_FREEBSD || SANITIZER_MANAGARM
+ // The MAP_NORESERVE define has been removed in FreeBSD 11.x, and even before
+ // that, it was never implemented.  So just define it to zero.
+ #undef  MAP_NORESERVE
+diff --git a/libsanitizer/sanitizer_common/sanitizer_posix_libcdep.cpp b/libsanitizer/sanitizer_common/sanitizer_posix_libcdep.cpp
+index 7ff48c358..2c2eca8fd 100644
+--- a/libsanitizer/sanitizer_common/sanitizer_posix_libcdep.cpp
++++ b/libsanitizer/sanitizer_common/sanitizer_posix_libcdep.cpp
+@@ -36,7 +36,8 @@
+ #include <sys/wait.h>
+ #include <unistd.h>
+ 
+-#if SANITIZER_FREEBSD
++// Managarm doesn't have this defined, define it here.
++#if SANITIZER_FREEBSD || SANITIZER_MANAGARM
+ // The MAP_NORESERVE define has been removed in FreeBSD 11.x, and even before
+ // that, it was never implemented.  So just define it to zero.
+ #undef MAP_NORESERVE
+@@ -267,6 +268,12 @@ bool SignalContext::IsStackOverflow() const {
+   // then hitting the guard page or unmapped memory, like, for example,
+   // unaligned memory access.
+   auto si = static_cast<const siginfo_t *>(siginfo);
++// si_SEGV_MAPERR = 1, si_SEGV_ACCERR = 2
++// HACK: Missing defines somewhere, add them here.
++#if SANITIZER_MANAGARM
++  const int si_SEGV_MAPERR = 1;
++  const int si_SEGV_ACCERR = 2;
++#endif
+   return IsStackAccess &&
+          (si->si_code == si_SEGV_MAPERR || si->si_code == si_SEGV_ACCERR);
+ }
+diff --git a/libsanitizer/sanitizer_common/sanitizer_procmaps.h b/libsanitizer/sanitizer_common/sanitizer_procmaps.h
+index a56640db4..be2721231 100644
+--- a/libsanitizer/sanitizer_common/sanitizer_procmaps.h
++++ b/libsanitizer/sanitizer_common/sanitizer_procmaps.h
+@@ -17,7 +17,7 @@
+ 
+ #if SANITIZER_LINUX || SANITIZER_FREEBSD || SANITIZER_NETBSD || \
+     SANITIZER_MAC || SANITIZER_SOLARIS ||  \
+-    SANITIZER_FUCHSIA
++    SANITIZER_FUCHSIA || SANITIZER_MANAGARM
+ 
+ #include "sanitizer_common.h"
+ #include "sanitizer_internal_defs.h"
+@@ -28,6 +28,20 @@
+ 
+ namespace __sanitizer {
+ 
++// HACK: Verify this
++#if SANITIZER_MANAGARM
++struct ProcSelfMapsBuff {
++  char *data;
++  uptr mmaped_size;
++  uptr len;
++};
++
++struct MemoryMappingLayoutData {
++  ProcSelfMapsBuff proc_self_maps;
++  const char *current;
++};
++#endif
++
+ // Memory protection masks.
+ static const uptr kProtectionRead = 1;
+ static const uptr kProtectionWrite = 2;
+diff --git a/libsanitizer/sanitizer_common/sanitizer_procmaps_common.cpp b/libsanitizer/sanitizer_common/sanitizer_procmaps_common.cpp
+index f2cfcffaf..fc88b9be4 100644
+--- a/libsanitizer/sanitizer_common/sanitizer_procmaps_common.cpp
++++ b/libsanitizer/sanitizer_common/sanitizer_procmaps_common.cpp
+@@ -12,7 +12,7 @@
+ #include "sanitizer_platform.h"
+ 
+ #if SANITIZER_FREEBSD || SANITIZER_LINUX || SANITIZER_NETBSD ||                \
+-    SANITIZER_SOLARIS
++    SANITIZER_SOLARIS || SANITIZER_MANAGARM
+ 
+ #include "sanitizer_common.h"
+ #include "sanitizer_placement_new.h"
+@@ -69,7 +69,9 @@ void MemoryMappedSegment::AddAddressRanges(LoadedModule *module) {
+   module->addAddressRange(start, end, IsExecutable(), IsWritable());
+ }
+ 
++// HACK: Needs procfs stuff, stub it out if on Managarm.
+ MemoryMappingLayout::MemoryMappingLayout(bool cache_enabled) {
++#ifndef SANITIZER_MANAGARM
+   // FIXME: in the future we may want to cache the mappings on demand only.
+   if (cache_enabled)
+     CacheMemoryMappings();
+@@ -81,6 +83,7 @@ MemoryMappingLayout::MemoryMappingLayout(bool cache_enabled) {
+     LoadFromCache();
+ 
+   Reset();
++#endif
+ }
+ 
+ bool MemoryMappingLayout::Error() const {
+@@ -99,7 +102,9 @@ void MemoryMappingLayout::Reset() {
+ }
+ 
+ // static
++// HACK: Needs procfs stuff, stub it out if on Managarm.
+ void MemoryMappingLayout::CacheMemoryMappings() {
++#ifndef SANITIZER_MANAGARM
+   ProcSelfMapsBuff new_proc_self_maps;
+   ReadProcMaps(&new_proc_self_maps);
+   // Don't invalidate the cache if the mappings are unavailable.
+@@ -109,6 +114,7 @@ void MemoryMappingLayout::CacheMemoryMappings() {
+   if (cached_proc_self_maps.mmaped_size)
+     UnmapOrDie(cached_proc_self_maps.data, cached_proc_self_maps.mmaped_size);
+   cached_proc_self_maps = new_proc_self_maps;
++#endif
+ }
+ 
+ void MemoryMappingLayout::LoadFromCache() {
+diff --git a/libsanitizer/ubsan/Makefile.am b/libsanitizer/ubsan/Makefile.am
+index 9654fb2af..18d7ff560 100644
+--- a/libsanitizer/ubsan/Makefile.am
++++ b/libsanitizer/ubsan/Makefile.am
+@@ -28,9 +28,9 @@ ubsan_files = $(ubsan_plugin_files)
+ 
+ libubsan_la_SOURCES = $(ubsan_files) 
+ libubsan_la_LIBADD = $(top_builddir)/sanitizer_common/libsanitizer_common.la 
+-if !USING_MAC_INTERPOSE
+-libubsan_la_LIBADD += $(top_builddir)/interception/libinterception.la
+-endif
++#if !USING_MAC_INTERPOSE
++#libubsan_la_LIBADD += $(top_builddir)/interception/libinterception.la
++#endif
+ if LIBBACKTRACE_SUPPORTED
+ libubsan_la_LIBADD += $(top_builddir)/libbacktrace/libsanitizer_libbacktrace.la
+ endif
+-- 
+2.34.0
+
