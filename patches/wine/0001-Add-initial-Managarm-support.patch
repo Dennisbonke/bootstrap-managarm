@@ -1,0 +1,104 @@
+From bca44cdd5e985bce6c874e2c37e240b6cc1d6b86 Mon Sep 17 00:00:00 2001
+From: Dennis Bonke <admin@dennisbonke.com>
+Date: Thu, 10 Feb 2022 10:09:41 +0100
+Subject: [PATCH] Add initial Managarm support
+
+Signed-off-by: Dennis Bonke <admin@dennisbonke.com>
+---
+ dlls/nsiproxy.sys/ndis.c        |  5 +++++
+ dlls/ntdll/unix/env.c           |  1 +
+ dlls/ntdll/unix/signal_x86_64.c | 30 ++++++++++++++++++++++++++++++
+ dlls/ntdll/unix/socket.c        |  1 +
+ 4 files changed, 37 insertions(+)
+
+diff --git a/dlls/nsiproxy.sys/ndis.c b/dlls/nsiproxy.sys/ndis.c
+index 036e8f1eb0c..68024d65a42 100644
+--- a/dlls/nsiproxy.sys/ndis.c
++++ b/dlls/nsiproxy.sys/ndis.c
+@@ -29,6 +29,11 @@
+ #include <sys/socket.h>
+ #include <sys/ioctl.h>
+ #include <unistd.h>
++#ifdef __managarm__
++#include <linux/sockios.h>
++#include <linux/if_arp.h>
++#include <linux/if_ether.h>
++#endif
+ 
+ #ifdef HAVE_NET_IF_H
+ #include <net/if.h>
+diff --git a/dlls/ntdll/unix/env.c b/dlls/ntdll/unix/env.c
+index c7e0674e083..df5b1c5f56f 100644
+--- a/dlls/ntdll/unix/env.c
++++ b/dlls/ntdll/unix/env.c
+@@ -45,6 +45,7 @@
+ # include <CoreFoundation/CFLocale.h>
+ # include <CoreFoundation/CFString.h>
+ #endif
++#include <termios.h>
+ 
+ #include "ntstatus.h"
+ #define WIN32_NO_STATUS
+diff --git a/dlls/ntdll/unix/signal_x86_64.c b/dlls/ntdll/unix/signal_x86_64.c
+index 68855dccacf..4cda63b9be9 100644
+--- a/dlls/ntdll/unix/signal_x86_64.c
++++ b/dlls/ntdll/unix/signal_x86_64.c
+@@ -142,6 +142,34 @@ __ASM_GLOBAL_FUNC( alloc_fs_sel,
+ #define FPU_sig(context)     ((XMM_SAVE_AREA32 *)((context)->uc_mcontext.fpregs))
+ #define XState_sig(fpu)      (((unsigned int *)fpu->Reserved4)[12] == FP_XSTATE_MAGIC1 ? (XSTATE *)(fpu + 1) : NULL)
+ 
++#elif defined(__managarm__)
++
++#define RAX_sig(context)     ((context)->uc_mcontext.gregs[REG_RAX])
++#define RBX_sig(context)     ((context)->uc_mcontext.gregs[REG_RBX])
++#define RCX_sig(context)     ((context)->uc_mcontext.gregs[REG_RCX])
++#define RDX_sig(context)     ((context)->uc_mcontext.gregs[REG_RDX])
++#define RSI_sig(context)     ((context)->uc_mcontext.gregs[REG_RSI])
++#define RDI_sig(context)     ((context)->uc_mcontext.gregs[REG_RDI])
++#define RBP_sig(context)     ((context)->uc_mcontext.gregs[REG_RBP])
++#define R8_sig(context)      ((context)->uc_mcontext.gregs[REG_R8])
++#define R9_sig(context)      ((context)->uc_mcontext.gregs[REG_R9])
++#define R10_sig(context)     ((context)->uc_mcontext.gregs[REG_R10])
++#define R11_sig(context)     ((context)->uc_mcontext.gregs[REG_R11])
++#define R12_sig(context)     ((context)->uc_mcontext.gregs[REG_R12])
++#define R13_sig(context)     ((context)->uc_mcontext.gregs[REG_R13])
++#define R14_sig(context)     ((context)->uc_mcontext.gregs[REG_R14])
++#define R15_sig(context)     ((context)->uc_mcontext.gregs[REG_R15])
++#define CS_sig(context)      (*((WORD *)&(context)->uc_mcontext.gregs[REG_CSGSFS] + 0))
++#define GS_sig(context)      (*((WORD *)&(context)->uc_mcontext.gregs[REG_CSGSFS] + 1))
++#define FS_sig(context)      (*((WORD *)&(context)->uc_mcontext.gregs[REG_CSGSFS] + 2))
++#define RSP_sig(context)     ((context)->uc_mcontext.gregs[REG_RSP])
++#define RIP_sig(context)     ((context)->uc_mcontext.gregs[REG_RIP])
++#define EFL_sig(context)     ((context)->uc_mcontext.gregs[REG_EFL])
++#define TRAP_sig(context)    ((context)->uc_mcontext.gregs[REG_TRAPNO])
++#define ERROR_sig(context)   ((context)->uc_mcontext.gregs[REG_ERR])
++#define FPU_sig(context)     ((XMM_SAVE_AREA32 *)((context)->uc_mcontext.fpregs))
++#define XState_sig(fpu)      NULL //(((unsigned int *)fpu->Reserved4)[12] == FP_XSTATE_MAGIC1 ? (XSTATE *)(fpu + 1) : NULL)
++
+ #elif defined(__FreeBSD__) || defined (__FreeBSD_kernel__)
+ 
+ #include <machine/trap.h>
+@@ -2944,6 +2972,8 @@ void signal_init_thread( TEB *teb )
+        thread's gsbase.  Have each thread record its gsbase pointer into its
+        TEB so alloc_tls_slot() can find it. */
+     teb->Reserved5[0] = amd64_thread_data()->pthread_teb;
++#elif defined __managarm__
++# warning Please define setting %gs for your architecture
+ #else
+ # error Please define setting %gs for your architecture
+ #endif
+diff --git a/dlls/ntdll/unix/socket.c b/dlls/ntdll/unix/socket.c
+index 71dfcdd1114..9ba5471ddaa 100644
+--- a/dlls/ntdll/unix/socket.c
++++ b/dlls/ntdll/unix/socket.c
+@@ -28,6 +28,7 @@
+ #include <sys/socket.h>
+ #include <sys/ioctl.h>
+ #include <unistd.h>
++#include <linux/sockios.h>
+ #ifdef HAVE_IFADDRS_H
+ # include <ifaddrs.h>
+ #endif
+-- 
+2.34.1
+
