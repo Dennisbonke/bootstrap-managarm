@@ -43,6 +43,8 @@ RUN apt-get update \
 		itstool \
 		# Used by wayland-scanner
 		libexpat1-dev \
+		# Used by host-wine-tools
+		libfreetype-dev \
 		# Used by gtk+-2
 		libgdk-pixbuf2.0-bin \
 		# Used by gdk-pixbuf
