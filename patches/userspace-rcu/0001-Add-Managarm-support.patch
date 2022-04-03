@@ -1,0 +1,26 @@
+From 520b5fb29f56c0f78ce64dcf291d7f0fdae8a7e2 Mon Sep 17 00:00:00 2001
+From: Dennis Bonke <admin@dennisbonke.com>
+Date: Sun, 3 Apr 2022 15:07:24 +0200
+Subject: [PATCH] Add Managarm support
+
+Signed-off-by: Dennis Bonke <admin@dennisbonke.com>
+---
+ include/urcu/syscall-compat.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/urcu/syscall-compat.h b/include/urcu/syscall-compat.h
+index 23b266e..828811f 100644
+--- a/include/urcu/syscall-compat.h
++++ b/include/urcu/syscall-compat.h
+@@ -33,7 +33,7 @@
+ #include <syscall.h>
+ 
+ #elif defined(__CYGWIN__) || defined(__APPLE__) || \
+-	defined(__FreeBSD__) || defined(__DragonFly__)
++	defined(__FreeBSD__) || defined(__DragonFly__) || defined(__managarm__)
+ /* Don't include anything on these platforms. */
+ 
+ #else
+-- 
+2.35.1
+

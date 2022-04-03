@@ -1174,6 +1174,43 @@ packages:
         environ:
           DESTDIR: '@THIS_COLLECT_DIR@'
 
+  - name: userspace-rcu
+    architecture: '@OPTION:arch@'
+    metadata:
+      summary: Userspace RCU (read-copy-update) library
+      description: liburcu is a LGPLv2.1 userspace RCU (read-copy-update) library. This data synchronization library provides read-side access which scales linearly with the number of cores.
+      spdx: 'LGPL-2.1-only'
+      website: 'https://liburcu.org/'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
+      categories: ['dev-libs']
+    source:
+      subdir: ports
+      git: 'https://git.liburcu.org/userspace-rcu.git'
+      tag: 'v0.13.0'
+      version: '0.13.0'
+      tools_required:
+        - host-autoconf-v2.69
+        - host-automake-v1.15
+        - host-libtool
+        - host-pkg-config
+      regenerate:
+        - args: ['./bootstrap']
+    tools_required:
+      - system-gcc
+    pkgs_required:
+      - mlibc
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--host=@OPTION:arch-triple@'
+        - '--prefix=/usr'
+        - '--disable-static'
+    build:
+      - args: ['make', '-j@PARALLELISM@']
+      - args: ['make', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+
   - name: wayland-protocols
     labels: [aarch64]
     architecture: '@OPTION:arch@'
