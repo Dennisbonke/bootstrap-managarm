@@ -1,5 +1,6 @@
 packages:
   - name: curl
+    labels: [aarch64]
     architecture: '@OPTION:arch@'
     source:
       subdir: 'ports'
@@ -25,6 +26,7 @@ packages:
       - openssl
       - zlib
       - zstd
+    revision: 2
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
