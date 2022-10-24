@@ -884,6 +884,7 @@ packages:
           DESTDIR: '@THIS_COLLECT_DIR@'
 
   - name: libunistring
+    labels: [aarch64]
     architecture: '@OPTION:arch@'
     metadata:
       summary: Library for manipulating Unicode and C strings according to Unicode standard
@@ -910,10 +911,11 @@ packages:
       - system-gcc
     pkgs_required:
       - mlibc
+    revision: 2
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
-        - '--host=x86_64-managarm'
+        - '--host=@OPTION:arch-triple@'
         - '--prefix=/usr'
         - '--with-sysroot=@SYSROOT_DIR@' # Set libtool's lt_sysroot.
         - '--disable-static'
