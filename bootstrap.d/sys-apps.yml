@@ -419,6 +419,7 @@ packages:
           DESTDIR: '@THIS_COLLECT_DIR@'
 
   - name: man-pages-posix
+    labels: [aarch64]
     architecture: noarch
     source:
       subdir: ports
@@ -429,7 +430,7 @@ packages:
       version: '2017a'
     tools_required:
       - system-gcc
-    revision: 2
+    revision: 3
     configure: []
     build:
       - args: ['mkdir', '-pv', '@THIS_COLLECT_DIR@/usr/share/man']
