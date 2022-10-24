@@ -106,6 +106,7 @@ packages:
           DESTDIR: '@THIS_COLLECT_DIR@'
 
   - name: libpsl
+    labels: [aarch64]
     architecture: '@OPTION:arch@'
     metadata:
       summary: C library for the Public Suffix List
@@ -133,7 +134,7 @@ packages:
       - libidn2
       - libunistring
       - libiconv
-    revision: 3
+    revision: 4
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
