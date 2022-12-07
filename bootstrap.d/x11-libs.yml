@@ -1985,6 +1985,7 @@ packages:
           DESTDIR: '@THIS_COLLECT_DIR@'
 
   - name: xcb-util-wm
+    labels: [aarch64]
     architecture: '@OPTION:arch@'
     source:
       subdir: ports
@@ -2011,7 +2012,7 @@ packages:
       - libxcb
       - xorg-util-macros
       - xorg-proto
-    revision: 3
+    revision: 4
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
