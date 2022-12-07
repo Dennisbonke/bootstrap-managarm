@@ -1,5 +1,6 @@
 packages:
   - name: sqlite
+    labels: [aarch64]
     architecture: '@OPTION:arch@'
     source:
       subdir: 'ports'
@@ -21,7 +22,7 @@ packages:
       - mlibc
       - readline
       - zlib
-    revision: 3
+    revision: 4
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
