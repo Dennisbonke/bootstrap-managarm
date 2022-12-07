@@ -1852,6 +1852,7 @@ packages:
           DESTDIR: '@THIS_COLLECT_DIR@'
 
   - name: xcb-util-image
+    labels: [aarch64]
     architecture: '@OPTION:arch@'
     source:
       subdir: ports
@@ -1879,7 +1880,7 @@ packages:
       - xorg-util-macros
       - xorg-proto
       - xcb-util
-    revision: 3
+    revision: 4
     configure:
       - args:
         - '@THIS_SOURCE_DIR@/configure'
