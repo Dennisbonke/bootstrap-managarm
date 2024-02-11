@@ -632,14 +632,14 @@ packages:
       - host-cmake
       - host-qt6
       - host-ecm
+      - wayland-scanner
     pkgs_required:
       - mlibc
       - qtbase6
-      ### Wayland disabled
-      # - qtwayland6
-      # - wayland
-      # - plasma-wayland-protocols
-      ### End Wayland disabled
+      - qtwayland6
+      - wayland
+      - plasma-wayland-protocols
+      - wayland-protocols
       - libx11
       - libxcb
       - xorg-proto
@@ -661,7 +661,7 @@ packages:
         - '-DKF_IGNORE_PLATFORM_CHECK=TRUE' # We're porting, and this is the recommended way to do it.
         - '-DBUILD_GEO_SCHEME_HANDLER=ON'
         - '-DWITH_DBUS=ON'
-        - '-DWITH_WAYLAND=OFF' # Disabled for missing dependencies for now
+        - '-DWITH_WAYLAND=ON'
         - '-DWITH_X11=ON'
         - '@THIS_SOURCE_DIR@'
     build:
