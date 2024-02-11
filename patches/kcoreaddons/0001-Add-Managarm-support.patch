@@ -1,0 +1,30 @@
+From bbf33a4ddb174aed5557a5a446d9d25e8a899558 Mon Sep 17 00:00:00 2001
+From: Dennis Bonke <admin@dennisbonke.com>
+Date: Sun, 11 Feb 2024 14:26:03 +0100
+Subject: [PATCH] Add Managarm support
+
+Signed-off-by: Dennis Bonke <admin@dennisbonke.com>
+---
+ src/lib/io/kfilesystemtype.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/lib/io/kfilesystemtype.cpp b/src/lib/io/kfilesystemtype.cpp
+index 5756eb1..48e0da4 100644
+--- a/src/lib/io/kfilesystemtype.cpp
++++ b/src/lib/io/kfilesystemtype.cpp
+@@ -72,10 +72,10 @@ KFileSystemType::Type determineFileSystemTypeImpl(const QByteArray &path)
+     return kde_typeFromName(buf.f_fstypename);
+ }
+ 
+-#elif defined(Q_OS_LINUX) || defined(Q_OS_HURD)
++#elif defined(Q_OS_LINUX) || defined(Q_OS_HURD) || defined(Q_OS_MANAGARM)
+ #include <sys/statfs.h>
+ 
+-#ifdef Q_OS_LINUX
++#if defined Q_OS_LINUX || defined(Q_OS_MANAGARM)
+ #include <linux/magic.h> // A lot of the filesystem superblock MAGIC numbers
+ #include <sys/stat.h>
+ #endif
+-- 
+2.43.0
+
