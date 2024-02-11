@@ -1571,7 +1571,7 @@ packages:
       - mlibc
       - libexpat
       - libffi
-    revision: 5
+    revision: 6
     configure:
       - args:
         - 'meson'
@@ -1583,7 +1583,7 @@ packages:
         - '--buildtype=debugoptimized'
         - '-Ddtd_validation=false'
         - '-Ddocumentation=false'
-        - '-Dscanner=false'
+        - '-Dscanner=true'
         - '@THIS_SOURCE_DIR@'
         environ:
           PKG_CONFIG_SYSROOT_DIR: '@BUILD_ROOT@/system-root'
