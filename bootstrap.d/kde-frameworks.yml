@@ -101,6 +101,12 @@ sources:
     tag: 'v5.249.0' # Yes this is 6.0rc2
     version: '6.0rc2'
 
+  - name: knotifications
+    subdir: 'ports'
+    git: 'https://github.com/KDE/knotifications.git'
+    tag: 'v5.249.0' # Yes this is 6.0rc2
+    version: '6.0rc2'
+
   - name: kwidgetsaddons
     subdir: 'ports'
     git: 'https://github.com/KDE/kwidgetsaddons.git'
@@ -604,6 +610,36 @@ tools:
       - host-qt6
       - host-ecm
       - host-ninja
+    configure:
+      - args:
+        - 'cmake'
+        - '-GNinja'
+        - '-DCMAKE_INSTALL_PREFIX=@PREFIX@'
+        - '-DECM_DIR=@BUILD_ROOT@/tools/host-ecm'
+        ### from ecm.class
+        - '-DQT_MAJOR_VERSION=6'
+        - '-DBUILD_TESTING=OFF'
+        - '-DBUILD_QCH=FALSE'
+        - '-DKDE_INSTALL_USE_QT_SYS_PATHS=ON'
+        - '-DKDE_INSTALL_QMLDIR=@PREFIX@/lib/qt6/qml'
+        - '-DKDE_INSTALL_LIBEXECDIR_KF=@PREFIX@/libexec'
+        ### end ecm.class
+        - '-DKF_IGNORE_PLATFORM_CHECK=TRUE' # We're porting, and this is the recommended way to do it.
+        - '@THIS_SOURCE_DIR@'
+    compile:
+      - args: ['ninja']
+    install:
+      - args: ['ninja', 'install']
+
+  - name: host-knotifications
+    architecture: noarch
+    from_source: knotifications
+    tools_required:
+      - host-cmake
+      - host-qt6
+      - host-ecm
+      - host-ninja
+      - host-kconfig
     configure:
       - args:
         - 'cmake'
@@ -1855,11 +1891,7 @@ packages:
       website: 'https://develop.kde.org/products/frameworks/'
       maintainer: "Dennis Bonke <dennis@managarm.org>"
       categories: ['kde-frameworks']
-    source:
-      subdir: 'ports'
-      git: 'https://github.com/KDE/knotifications.git'
-      tag: 'v5.249.0' # Yes this is 6.0rc2
-      version: '6.0rc2'
+    from_source: knotifications
     tools_required:
       - system-gcc
       - host-cmake
