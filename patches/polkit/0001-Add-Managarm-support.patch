@@ -1,0 +1,27 @@
+From 993f744274f0124205a7713ac893c8dc5a859567 Mon Sep 17 00:00:00 2001
+From: Dennis Bonke <admin@dennisbonke.com>
+Date: Mon, 12 Feb 2024 13:49:30 +0100
+Subject: [PATCH] Add Managarm support
+
+Signed-off-by: Dennis Bonke <admin@dennisbonke.com>
+---
+ meson.build | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/meson.build b/meson.build
+index 2f81c90..f7de0b2 100644
+--- a/meson.build
++++ b/meson.build
+@@ -223,7 +223,8 @@ if enable_logind
+ endif
+ config_h.set('HAVE_LIBSYSTEMD', enable_logind)
+ 
+-config_h.set('HAVE_PIDFD_OPEN', cc.get_define('SYS_pidfd_open', prefix: '#include <sys/syscall.h>') != '')
++#config_h.set('HAVE_PIDFD_OPEN', cc.get_define('SYS_pidfd_open', prefix: '#include <sys/syscall.h>') != '')
++config_h.set('HAVE_PIDFD_OPEN', false)
+ 
+ # User for running polkitd
+ polkitd_user = get_option('polkitd_user')
+-- 
+2.43.0
+

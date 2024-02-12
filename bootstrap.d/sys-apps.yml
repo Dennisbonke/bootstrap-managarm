@@ -709,6 +709,54 @@ packages:
           DESTDIR: '@THIS_COLLECT_DIR@'
         quiet: true
 
+  - name: polkit
+    architecture: '@OPTION:arch@'
+    metadata:
+      summary: Policy framework for controlling privileges for system-wide services
+      description: Polkit is a toolkit for defining and handling authorizations. It is used for allowing unprivileged processes to communicate with privileged processes.
+      spdx: 'LGPL-2.0-only'
+      website: 'https://www.freedesktop.org/wiki/Software/polkit'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
+      categories: ['sys-apps']
+    source:
+      subdir: ports
+      git: 'https://github.com/polkit-org/polkit.git'
+      tag: '124'
+      version: '124'
+    tools_required:
+      - system-gcc
+      - virtual: pkgconfig-for-target
+        triple: "@OPTION:arch-triple@"
+    pkgs_required:
+      - mlibc
+      - glib
+      - spidermonkey
+      - libexpat
+      - libxcrypt
+      - dbus
+    configure:
+      - args:
+        - 'meson'
+        - 'setup'
+        - '--cross-file'
+        - '@SOURCE_ROOT@/scripts/meson-@OPTION:arch-triple@.cross-file'
+        - '--prefix=/usr'
+        - '--buildtype=debugoptimized'
+        - '--wrap-mode=nofallback'
+        - '-Djs_engine=mozjs'
+        - '-Dauthfw=shadow'
+        - '-Dos_type=lfs'
+        - '-Dintrospection=false'
+        - '-Dman=false'
+        - '-Dsession_tracking=ConsoleKit' # Lies but we don't do systemd nor elogind
+        - '@THIS_SOURCE_DIR@'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+      - args: ['touch', '@THIS_COLLECT_DIR@/etc/polkit-1/rules.d/.keep']
+
   - name: sed
     labels: [aarch64]
     architecture: '@OPTION:arch@'
