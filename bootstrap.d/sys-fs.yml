@@ -1,0 +1,55 @@
+packages:
+  - name: udisks
+    architecture: '@OPTION:arch@'
+    metadata:
+      summary: Daemon providing interfaces to work with storage devices
+      description: This package provides a daemon, tools and libraries to access and manipulate disks and storage devices.
+      spdx: 'GPL-2.0-or-later LGPL-2.0-or-later'
+      website: 'https://www.freedesktop.org/wiki/Software/udisks'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
+      categories: ['dev-libs']
+    source:
+      subdir: ports
+      git: 'https://github.com/storaged-project/udisks.git'
+      tag: 'udisks-2.10.1'
+      version: '2.10.1'
+      tools_required:
+        - host-autoconf-v2.69 
+        - host-automake-v1.15
+        - host-libtool
+        - host-pkg-config
+      regenerate:
+        - args: ['./autogen.sh']
+          environ:
+            NOCONFIGURE: '1'
+    tools_required:
+      - system-gcc
+    pkgs_required:
+      - mlibc
+      - polkit
+      - eudev
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--host=@OPTION:arch-triple@'
+        - '--prefix=/usr'
+        - '--disable-gtk-doc'
+        - '--disable-static'
+        - '--localstatedir=/var'
+        - '--with-html-dir=/usr/share/gtk-doc/html'
+        - '--with-modprobedir=/lib/modprobe.d'
+        - '--with-systemdsystemunitdir=no'
+        - '--with-tmpfilesdir="/usr/lib/tmpfiles.d'
+        - '--with-udevdir=/etc/udev/rules.d'
+        - '--disable-acl'
+        - '--disable-daemon'
+        - '--disable-debug'
+        - '--disable-introspection'
+        - '--disable-lvm2'
+        - '--disable-btrfs'
+        - '--enable-fhs-media'
+    build:
+      - args: ['make', '-j@PARALLELISM@']
+      - args: ['make', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
