@@ -1,0 +1,59 @@
+From de3f1c82138ae4df670c3aa90ffb31b6ac3449d2 Mon Sep 17 00:00:00 2001
+From: Dennis Bonke <admin@dennisbonke.com>
+Date: Mon, 12 Feb 2024 15:13:28 +0100
+Subject: [PATCH] Add Managarm support
+
+Signed-off-by: Dennis Bonke <admin@dennisbonke.com>
+---
+ keyutils.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/keyutils.c b/keyutils.c
+index 48b779e..b0324b0 100644
+--- a/keyutils.c
++++ b/keyutils.c
+@@ -40,8 +40,13 @@ key_serial_t __weak add_key(const char *type,
+ 			    size_t plen,
+ 			    key_serial_t ringid)
+ {
++#ifndef __managarm__
+ 	return syscall(__NR_add_key,
+ 		       type, description, payload, plen, ringid);
++#else
++	errno = ENOSYS;
++	return 0;
++#endif
+ }
+ 
+ key_serial_t __weak request_key(const char *type,
+@@ -49,8 +54,13 @@ key_serial_t __weak request_key(const char *type,
+ 				const char * callout_info,
+ 				key_serial_t destringid)
+ {
++#ifndef __managarm__
+ 	return syscall(__NR_request_key,
+ 		       type, description, callout_info, destringid);
++#else
++        errno = ENOSYS;
++        return 0;
++#endif
+ }
+ 
+ static inline long __keyctl(int cmd,
+@@ -59,8 +69,13 @@ static inline long __keyctl(int cmd,
+ 			    unsigned long arg4,
+ 			    unsigned long arg5)
+ {
++#ifndef __managarm__
+ 	return syscall(__NR_keyctl,
+ 		       cmd, arg2, arg3, arg4, arg5);
++#else
++        errno = ENOSYS;
++        return 0;
++#endif
+ }
+ 
+ long __weak keyctl(int cmd, ...)
+-- 
+2.43.0
+

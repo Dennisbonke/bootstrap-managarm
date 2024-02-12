@@ -527,6 +527,43 @@ packages:
           SBINDIR: '/usr/sbin'
           DESTDIR: '@THIS_COLLECT_DIR@'
 
+  - name: keyutils
+    architecture: '@OPTION:arch@'
+    metadata:
+      summary: Linux Key Management Utilities
+      description: This package contains a set of utilities for managing the key retention facility in the kernel, which can be used by filesystems, block devices and more to gain and retain the authorization and encryption keys required to perform secure operations.
+      spdx: 'LGPL-2.1-only GPL-2-only'
+      website: 'https://git.kernel.org/pub/scm/linux/kernel/git/dhowells/keyutils.git'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
+      categories: ['sys-apps']
+    source:
+      subdir: ports
+      git: 'https://git.kernel.org/pub/scm/linux/kernel/git/dhowells/keyutils.git'
+      tag: 'v1.6.3'
+      version: '1.6.3'
+    tools_required:
+      - system-gcc
+    pkgs_required:
+      - mlibc
+    configure:
+      # keyutils does not seem to support out-of-tree builds, so we just copy
+      # the source tree into the build directory instead
+      - args: ['cp', '-r', '@THIS_SOURCE_DIR@/.', '@THIS_BUILD_DIR@']
+    build:
+      - args: ['make', '-j@PARALLELISM@']
+        environ:
+          CC: '@OPTION:arch-triple@-gcc'
+          CXX: '@OPTION:arch-triple@-g++'
+      - args: ['make', 'DESTDIR=@THIS_COLLECT_DIR@', 'NO_ARLIB=1', 'LIBDIR=/usr/lib', 'BINDIR=/usr/bin', 'SBINDIR=/usr/sbin', 'install']
+        environ:
+          CC: '@OPTION:arch-triple@-gcc'
+          CXX: '@OPTION:arch-triple@-g++'
+          DESTDIR: '@THIS_COLLECT_DIR@'
+      - args: ['touch', '@THIS_COLLECT_DIR@/etc/request-key.d/.keep']
+      - args: ['touch', '@THIS_COLLECT_DIR@/etc/keyutils/.keep']
+      - args: ['rm', '-v', '@THIS_COLLECT_DIR@/usr/lib/libkeyutils.so']
+      - args: ['ln', '-svn', 'libkeyutils.so.1', '@THIS_COLLECT_DIR@/usr/lib/libkeyutils.so']
+
   - name: less
     labels: [aarch64]
     architecture: '@OPTION:arch@'
