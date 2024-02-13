@@ -1,4 +1,68 @@
 packages:
+  - name: breeze
+    architecture: '@OPTION:arch@'
+    metadata:
+      summary: Breeze visual style for the Plasma desktop
+      description: This package provides the Breeze visual style for the Plasma desktop.
+      spdx: 'GPL-2.0-only'
+      website: 'https://invent.kde.org/plasma/breeze'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
+      categories: ['kde-plasma']
+    source:
+      subdir: 'ports'
+      git: 'https://github.com/KDE/breeze.git'
+      tag: 'v5.93.0' # Yes this is 6.0rc2
+      version: '6.0rc2'
+    tools_required:
+      - system-gcc
+      - host-cmake
+      - host-qt6
+      - host-ecm
+      - host-kconfig
+      - host-kcmutils
+    pkgs_required:
+      - mlibc
+      - qtbase6
+      - qtdeclarative6
+      - frameworkintegration
+      - kcmutils
+      - kconfig
+      - kconfigwidgets
+      - kcoreaddons
+      - kguiaddons
+      - ki18n
+      - kiconthemes
+      - kirigami
+      - kwidgetsaddons
+      - kwindowsystem
+      - kdecoration
+    configure:
+      - args:
+        - 'cmake'
+        - '-GNinja'
+        - '-DCMAKE_INSTALL_PREFIX=/usr'
+        - '-DCMAKE_TOOLCHAIN_FILE=@SOURCE_ROOT@/scripts/CMakeToolchain-@OPTION:arch-triple@.txt'
+        - '-DECM_DIR=@BUILD_ROOT@/tools/host-ecm'
+        - '-DCMAKE_BUILD_TYPE=Debug'
+        ### from ecm.class
+        - '-DQT_MAJOR_VERSION=6'
+        - '-DBUILD_TESTING=OFF'
+        - '-DBUILD_QCH=FALSE'
+        - '-DKDE_INSTALL_USE_QT_SYS_PATHS=ON'
+        - '-DKDE_INSTALL_QMLDIR=/usr/lib/qt6/qml'
+        - '-DKDE_INSTALL_PLUGINDIR=/usr/lib/qt6/plugins'
+        - '-DKDE_INSTALL_QTPLUGINDIR=/usr/lib/qt6/plugins'
+        ### end ecm.class
+        - '-DBUILD_QT6=ON'
+        - '-DBUILD_QT5=OFF'
+        - '-DKF6_HOST_TOOLING=@BUILD_ROOT@/tools/host-kconfig/lib/x86_64-linux-gnu/cmake/;@BUILD_ROOT@/tools/host-kcmutils/lib/x86_64-linux-gnu/cmake/'
+        - '@THIS_SOURCE_DIR@'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+
   - name: kdecoration
     architecture: '@OPTION:arch@'
     metadata:
