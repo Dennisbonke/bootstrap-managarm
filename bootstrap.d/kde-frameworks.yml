@@ -1711,6 +1711,8 @@ packages:
         - '-DBUILD_TESTING=OFF'
         - '-DBUILD_QCH=FALSE'
         - '-DKDE_INSTALL_USE_QT_SYS_PATHS=ON'
+        - '-DKDE_INSTALL_QMLDIR=/usr/lib/qt6/qml'
+        - '-DKDE_INSTALL_QTPLUGINDIR=/usr/lib/qt6/plugins'
         ### end ecm.class
         - '-DKF_IGNORE_PLATFORM_CHECK=TRUE' # We're porting, and this is the recommended way to do it.
         - '-DBUILD_GEO_SCHEME_HANDLER=ON'
