@@ -1,0 +1,35 @@
+From ff9e4f1df971cd5e3b0698dea4f7b8ea08dc19d2 Mon Sep 17 00:00:00 2001
+From: Dennis Bonke <admin@dennisbonke.com>
+Date: Tue, 13 Feb 2024 17:29:14 +0100
+Subject: [PATCH] Add Managarm support
+
+Signed-off-by: Dennis Bonke <admin@dennisbonke.com>
+---
+ src/kdesud/kdesud.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/kdesud/kdesud.cpp b/src/kdesud/kdesud.cpp
+index 0d8598d..76485d9 100644
+--- a/src/kdesud/kdesud.cpp
++++ b/src/kdesud/kdesud.cpp
+@@ -60,7 +60,7 @@
+ 
+ #include <dirent.h>
+ 
+-#if !HAVE_CLOSE_RANGE
++#if !defined(HAVE_CLOSE_RANGE) && !defined(__managarm__)
+ #include <sys/syscall.h> // close_range syscall
+ #endif
+ 
+@@ -120,7 +120,7 @@ static int closeExtraFds()
+     }
+ #endif
+ 
+-#if !defined(__FreeBSD__) && !defined(__OpenBSD__) // /proc, /dev are Linux only
++#if !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__managarm__) // /proc, /dev are Linux only
+     // close_range isn't available, fallback to iterarting over "/dev/fd/"
+     // and close the fd's manually
+     qCDebug(KSUD_LOG) << "close_range function/syscall isn't available, falling back to iterarting "
+-- 
+2.43.0
+
