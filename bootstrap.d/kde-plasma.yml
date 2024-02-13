@@ -63,6 +63,63 @@ packages:
         environ:
           DESTDIR: '@THIS_COLLECT_DIR@'
 
+  - name: kactivitymanagerd
+    architecture: '@OPTION:arch@'
+    metadata:
+      summary: System service to manage user's activities, track the usage patterns etc.
+      description: This package provides a system service to manage user's activities, track the usage patterns etc.
+      spdx: 'GPL-2.0-only GPL-3.0-only'
+      website: 'https://kde.org/plasma-desktop'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
+      categories: ['kde-plasma']
+    source:
+      subdir: 'ports'
+      git: 'https://github.com/KDE/kactivitymanagerd.git'
+      tag: 'v5.93.0' # Yes this is 6.0rc2
+      version: '6.0rc2'
+    tools_required:
+      - system-gcc
+      - host-cmake
+      - host-qt6
+      - host-ecm
+    pkgs_required:
+      - mlibc
+      - qtbase6
+      - kconfig
+      - kcoreaddons
+      - kcrash
+      - kdbusaddons
+      - kglobalaccel
+      - ki18n
+      - kio
+      - kservice
+      - kwindowsystem
+      - kxmlgui
+      - boost
+    configure:
+      - args:
+        - 'cmake'
+        - '-GNinja'
+        - '-DCMAKE_INSTALL_PREFIX=/usr'
+        - '-DCMAKE_TOOLCHAIN_FILE=@SOURCE_ROOT@/scripts/CMakeToolchain-@OPTION:arch-triple@.txt'
+        - '-DECM_DIR=@BUILD_ROOT@/tools/host-ecm'
+        - '-DCMAKE_BUILD_TYPE=Debug'
+        ### from ecm.class
+        - '-DQT_MAJOR_VERSION=6'
+        - '-DBUILD_TESTING=OFF'
+        - '-DBUILD_QCH=FALSE'
+        - '-DKDE_INSTALL_USE_QT_SYS_PATHS=ON'
+        - '-DKDE_INSTALL_QMLDIR=/usr/lib/qt6/qml'
+        - '-DKDE_INSTALL_PLUGINDIR=/usr/lib/qt6/plugins'
+        - '-DKDE_INSTALL_QTPLUGINDIR=/usr/lib/qt6/plugins'
+        ### end ecm.class
+        - '@THIS_SOURCE_DIR@'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+
   - name: kdecoration
     architecture: '@OPTION:arch@'
     metadata:
