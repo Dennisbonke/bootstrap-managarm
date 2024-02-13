@@ -1,0 +1,51 @@
+From 920e45e2e01c8ab1f089dbe1119f08200c6ad00c Mon Sep 17 00:00:00 2001
+From: Dennis Bonke <admin@dennisbonke.com>
+Date: Tue, 13 Feb 2024 19:28:08 +0100
+Subject: [PATCH] Add Managarm support
+
+Signed-off-by: Dennis Bonke <admin@dennisbonke.com>
+---
+ CMakeLists.txt | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index dd7769e..50d1957 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -46,7 +46,6 @@ endif()
+ 
+ find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS
+     Config
+-    DocTools
+     IconThemes
+     I18n
+     KCMUtils
+@@ -60,6 +59,12 @@ find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS
+     QUIET
+ )
+ 
++if(BUILD_DOCS)
++  find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS
++      DocTools
++  )
++endif()
++
+ # Disables automatic conversions from QString (or char *) to QUrl.
+ add_definitions(-DQT_NO_URL_CAST_FROM_STRING)
+ 
+@@ -73,8 +78,10 @@ ecm_set_disabled_deprecation_versions(QT 5.15.2)
+ 
+ include_directories(${CMAKE_CURRENT_BINARY_DIR})
+ 
+-add_subdirectory(doc)
+-kdoctools_install(po)
++if(BUILD_DOCS)
++  add_subdirectory(doc)
++  kdoctools_install(po)
++endif()
+ 
+ function(install_compat_symlink executable_target)
+     add_custom_command(TARGET ${executable_target} POST_BUILD
+-- 
+2.43.0
+
