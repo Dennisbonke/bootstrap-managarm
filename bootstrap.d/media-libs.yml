@@ -1416,3 +1416,38 @@ packages:
         environ:
           DESTDIR: '@THIS_COLLECT_DIR@'
         quiet: true
+
+  - name: zxing-cpp
+    architecture: '@OPTION:arch@'
+    metadata:
+      summary: C++ Multi-format 1D/2D barcode image processing library
+      description: This package provides a C++ Multi-format 1D/2D barcode image processing library.
+      spdx: 'Apache-2.0'
+      website: 'https://github.com/zxing-cpp/zxing-cpp'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
+      categories: ['media-libs']
+    source:
+      subdir: ports
+      git: 'https://github.com/zxing-cpp/zxing-cpp.git'
+      tag: 'v2.2.1'
+      version: '2.2.1'
+    tools_required:
+      - host-cmake
+      - system-gcc
+    pkgs_required:
+      - mlibc
+    configure:
+      - args:
+        - 'cmake'
+        - '-DCMAKE_TOOLCHAIN_FILE=@SOURCE_ROOT@/scripts/CMakeToolchain-@OPTION:arch-triple@.txt'
+        - '-DCMAKE_INSTALL_PREFIX=/usr'
+        - '-DBUILD_SHARED_LIBS=ON'
+        - '-DBUILD_EXAMPLES=OFF'
+        - '-DBUILD_BLACKBOX_TESTS=OFF'
+        - '-DBUILD_UNIT_TESTS=OFF'
+        - '@THIS_SOURCE_DIR@'
+    build:
+      - args: ['make', '-j@PARALLELISM@']
+      - args: ['make', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
