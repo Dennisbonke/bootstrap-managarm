@@ -471,6 +471,73 @@ packages:
         environ:
           DESTDIR: '@THIS_COLLECT_DIR@'
 
+  - name: libksysguard
+    architecture: '@OPTION:arch@'
+    metadata:
+      summary: Task management and system monitoring library
+      description: This package provides the Task management and system monitoring library.
+      spdx: 'LGPL-2.0-or-later'
+      website: 'https://kde.org/plasma-desktop'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
+      categories: ['kde-plasma']
+    source:
+      subdir: 'ports'
+      git: 'https://github.com/KDE/libksysguard.git'
+      tag: 'v5.27.80' # Yes this is 6.0rc2???
+      version: '6.0rc2'
+    tools_required:
+      - system-gcc
+      - host-cmake
+      - host-qt6
+      - host-ecm
+      - wayland-scanner
+    pkgs_required:
+      - mlibc
+      - qtbase6
+      - qtdeclarative6
+      - kauth
+      - kconfig
+      - kconfigwidgets
+      - kcoreaddons
+      - kglobalaccel
+      - ki18n
+      - kio
+      - kjobwidgets
+      - knewstuff
+      - kpackage
+      - kservice
+      - kwidgetsaddons
+      - kwindowsystem
+      - solid
+      - zlib
+      - libx11
+      - libxres
+    configure:
+      - args:
+        - 'cmake'
+        - '-GNinja'
+        - '-DCMAKE_INSTALL_PREFIX=/usr'
+        - '-DCMAKE_TOOLCHAIN_FILE=@SOURCE_ROOT@/scripts/CMakeToolchain-@OPTION:arch-triple@.txt'
+        - '-DECM_DIR=@BUILD_ROOT@/tools/host-ecm'
+        - '-DCMAKE_BUILD_TYPE=Debug'
+        ### from ecm.class
+        - '-DQT_MAJOR_VERSION=6'
+        - '-DBUILD_TESTING=OFF'
+        - '-DBUILD_QCH=FALSE'
+        - '-DKDE_INSTALL_USE_QT_SYS_PATHS=ON'
+        - '-DKDE_INSTALL_QMLDIR=/usr/lib/qt6/qml'
+        - '-DKDE_INSTALL_PLUGINDIR=/usr/lib/qt6/plugins'
+        - '-DKDE_INSTALL_QTPLUGINDIR=/usr/lib/qt6/plugins'
+        ### end ecm.class
+        - '-DKF_IGNORE_PLATFORM_CHECK=TRUE' # We're porting, and this is the recommended way to do it.
+        - '-DWITH_X11=TRUE'
+        - '@THIS_SOURCE_DIR@'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+
   - name: libplasma
     architecture: '@OPTION:arch@'
     metadata:

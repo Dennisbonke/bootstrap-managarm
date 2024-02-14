@@ -1,0 +1,47 @@
+From 0b73e183ad281cfe0905f1ac45b3fc91c2299dc4 Mon Sep 17 00:00:00 2001
+From: Dennis Bonke <admin@dennisbonke.com>
+Date: Wed, 14 Feb 2024 22:28:32 +0100
+Subject: [PATCH] Add Managarm support
+
+Signed-off-by: Dennis Bonke <admin@dennisbonke.com>
+---
+ processcore/processes_linux_p.cpp | 2 ++
+ processcore/processes_local_p.cpp | 2 +-
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/processcore/processes_linux_p.cpp b/processcore/processes_linux_p.cpp
+index d250f1d..98ff3e7 100644
+--- a/processcore/processes_linux_p.cpp
++++ b/processcore/processes_linux_p.cpp
+@@ -39,6 +39,7 @@
+ extern int sys_ioprio_set(int, int, int);
+ extern int sys_ioprio_get(int, int);
+ 
++#ifndef __managarm__
+ #define HAVE_IONICE
+ /* Check if this system has ionice */
+ #if !defined(SYS_ioprio_get) || !defined(SYS_ioprio_set)
+@@ -66,6 +67,7 @@ extern int sys_ioprio_get(int, int);
+ #define SYS_ioprio_set __NR_ioprio_set
+ 
+ #endif /* !SYS_ioprio_get */
++#endif
+ 
+ /* Set up ionice functions */
+ #ifdef HAVE_IONICE
+diff --git a/processcore/processes_local_p.cpp b/processcore/processes_local_p.cpp
+index 70697b4..51ff151 100644
+--- a/processcore/processes_local_p.cpp
++++ b/processcore/processes_local_p.cpp
+@@ -4,7 +4,7 @@
+     SPDX-License-Identifier: LGPL-2.0-or-later
+ */
+ 
+-#if defined __linux__
++#if defined __linux__ || defined __managarm__
+ #include "processes_linux_p.cpp"
+ #elif defined __FreeBSD__ || defined __FreeBSD_kernel__
+ #include "processes_freebsd_p.cpp"
+-- 
+2.43.0
+
