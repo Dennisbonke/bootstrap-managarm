@@ -1,0 +1,60 @@
+From c30576e28133e5a6ab6473da61ecbb4370994673 Mon Sep 17 00:00:00 2001
+From: Dennis Bonke <admin@dennisbonke.com>
+Date: Wed, 14 Feb 2024 22:19:30 +0100
+Subject: [PATCH] Add Managarm support
+
+Signed-off-by: Dennis Bonke <admin@dennisbonke.com>
+---
+ CMakeLists.txt | 15 ++++++++++++---
+ 1 file changed, 12 insertions(+), 3 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 7741477..0a8b22a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -52,7 +52,6 @@ find_package(KF6 ${KF_MIN_VERSION} REQUIRED COMPONENTS
+     ConfigWidgets
+     CoreAddons
+     DBusAddons
+-    DocTools
+     DNSSD
+     I18n
+     KIO
+@@ -63,6 +62,12 @@ find_package(KF6 ${KF_MIN_VERSION} REQUIRED COMPONENTS
+     TextWidgets
+ )
+ 
++if(BUILD_DOCS)
++  find_package(KF6 ${KF_MIN_VERSION} REQUIRED COMPONENTS
++      DocTools
++  )
++endif()
++
+ include(KDEClangFormat)
+ file(GLOB_RECURSE ALL_CLANG_FORMAT_SOURCE_FILES *.cpp *.h)
+ kde_clang_format(${ALL_CLANG_FORMAT_SOURCE_FILES})
+@@ -164,7 +169,9 @@ ecm_set_disabled_deprecation_versions(
+     KF 5.96
+ )
+ 
+-add_subdirectory(doc)
++if(BUILD_DOCS)
++  add_subdirectory(doc)
++endif()
+ add_subdirectory(kcms)
+ 
+ if(BUILD_ACTIVITIES)
+@@ -218,7 +225,9 @@ ecm_qt_install_logging_categories(
+ )
+ 
+ ki18n_install(po)
+-kdoctools_install(po)
++if(BUILD_DOCS)
++  kdoctools_install(po)
++endif()
+ 
+ kde_configure_git_pre_commit_hook(CHECKS CLANG_FORMAT)
+ 
+-- 
+2.43.0
+
