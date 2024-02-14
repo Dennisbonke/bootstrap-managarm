@@ -1,0 +1,52 @@
+packges:
+  - name: libqalculate
+    architecture: '@OPTION:arch@'
+    metadata:
+      summary: A modern multi-purpose calculator library
+      description: This package provides a modern multi-purpose calculator library.
+      spdx: 'GPL-2.0-or-later'
+      website: 'https://qalculate.github.io/'
+      maintainer: "Dennis Bonke <dennis@managarm.org>"
+      categories: ['sci-libs']
+    source:
+      subdir: ports
+      git: 'https://github.com/Qalculate/libqalculate.git'
+      tag: 'v4.9.0'
+      version: '4.9.0'
+      tools_required:
+        - host-autoconf-v2.69 
+        - host-automake-v1.15
+        - host-libtool
+        - host-pkg-config
+      regenerate:
+        - args: ['./autogen.sh']
+          environ:
+            NOCONFIGURE: '1'
+    tools_required:
+      - system-gcc
+    pkgs_required:
+      - mlibc
+      - gmp
+      - libxml
+      - mpfr
+      - libiconv
+      - curl
+      - icu
+      - readline
+    configure:
+      - args:
+        - '@THIS_SOURCE_DIR@/configure'
+        - '--host=@OPTION:arch-triple@'
+        - '--prefix=/usr'
+        - '--disable-static'
+        - '--disable-tests'
+        - '--disable-unittests'
+        - '--with-libcurl'
+        - '--without-gnuplot-call'
+        - '--with-icu'
+        - '--with-readline'
+    build:
+      - args: ['make', '-j@PARALLELISM@']
+      - args: ['make', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
