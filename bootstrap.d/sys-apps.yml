@@ -792,6 +792,132 @@ packages:
       - args: ['rm', '-v', '@THIS_COLLECT_DIR@/usr/.crates.toml']
       - args: ['rm', '-v', '@THIS_COLLECT_DIR@/usr/.crates2.json']
 
+  - name: systemd
+    source:
+      subdir: 'ports'
+      git: 'https://github.com/systemd/systemd.git'
+      tag: 'v252'
+      version: '252'
+      # regenerate:
+      #   - args: ['wget', '-O', '@THIS_SOURCE_DIR@/pci.ids', 'https://raw.githubusercontent.com/pciutils/pciids/master/pci.ids']
+    tools_required:
+      - system-gcc
+      - virtual: pkgconfig-for-target
+        triple: x86_64-managarm
+    pkgs_required:
+      - mlibc
+      - libxcrypt
+      - util-linux-libs
+      - curl
+      - libidn2
+      - gnutls
+      - openssl
+      - p11-kit
+      - zlib
+      - bzip2
+      - xz-utils
+      - lz4
+      - zstd
+      - libxkbcommon
+      - pcre2
+      - glib
+      - dbus
+    configure:
+      - args:
+        - 'meson'
+        - '--cross-file'
+        - '@SOURCE_ROOT@/scripts/meson-@OPTION:arch-triple@.cross-file'
+        - '--prefix=/usr'
+        - '--localstatedir=/var'
+        - '-Dsupport-url="https://managarm.org/"'
+        - '-Dsplit-usr=false'
+        - '-Dsplit-bin=true'
+        - '-Dpwquality=false'
+        - '-Dseccomp=false'
+        - '-Dselinux=false'
+        - '-Dapparmor=false'
+        - '-Dpolkit=false'
+        - '-Dacl=false'
+        - '-Daudit=false'
+        - '-Dkmod=false'
+        - '-Dpam=false'
+        - '-Dlibcryptsetup=false'
+        - '-Dlibiptc=false'
+        - '-Dqrencode=false'
+        - '-Dlibfido2=false'
+        - '-Dmicrohttpd=false'
+        - '-Dtpm2=false'
+        - '-Dnetworkd=false'
+        - '-Defi=false'
+        - '-Dhibernate=false'
+        - '-Dldconfig=false'
+        - '-Dresolve=false'
+        - '-Denvironment-d=false'
+        - '-Dbinfmt=false'
+        - '-Drepart=false'
+        - '-Dcoredump=false'
+        - '-Dpstore=false'
+        - '-Doomd=false'
+        - '-Dlogind=false'
+        - '-Dhostnamed=false'
+        - '-Dlocaled=false'
+        - '-Dmachined=false'
+        - '-Dportabled=false'
+        - '-Dsysext=false'
+        - '-Duserdb=false'
+        - '-Dhomed=false'
+        - '-Dtimedated=false'
+        - '-Dtimesyncd=false'
+        - '-Dremote=false'
+        - '-Dnss-myhostname=false'
+        - '-Dnss-mymachines=false'
+        - '-Dnss-resolve=false'
+        - '-Dnss-systemd=false'
+        - '-Dfirstboot=false'
+        - '-Drandomseed=false'
+        - '-Dbacklight=false'
+        - '-Dvconsole=false'
+        - '-Dquotacheck=false'
+        - '-Dsysusers=false'
+        - '-Dtmpfiles=false'
+        - '-Dimportd=false'
+        - '-Dhwdb=false'
+        - '-Drfkill=false'
+        - '-Dman=false'
+        - '-Dhtml=false'
+        - '-Dxdg-autostart=false'
+        - '-Dtranslations=false'
+        - '-Dgshadow=false'
+        - '-Ddefault-locale=C'
+        - '-Dsmack=false'
+        - '-Dima=false'
+        - '-Delfutils=false'
+        - '-Dutmp=false'
+        - '-Dbpf-framework=false'
+        - '--buildtype=debug'
+        - '@THIS_SOURCE_DIR@'
+    build:
+      - args: ['ninja']
+      - args: ['ninja', 'install']
+        environ:
+          DESTDIR: '@THIS_COLLECT_DIR@'
+      #   quiet: true
+      - args: ['touch', '@THIS_COLLECT_DIR@/usr/lib/systemd/system/runlevel1.target.wants/.keep']
+      - args: ['touch', '@THIS_COLLECT_DIR@/usr/lib/systemd/system/runlevel2.target.wants/.keep']
+      - args: ['touch', '@THIS_COLLECT_DIR@/usr/lib/systemd/system/runlevel3.target.wants/.keep']
+      - args: ['touch', '@THIS_COLLECT_DIR@/usr/lib/systemd/system/runlevel4.target.wants/.keep']
+      - args: ['touch', '@THIS_COLLECT_DIR@/usr/lib/systemd/system/runlevel5.target.wants/.keep']
+      - args: ['touch', '@THIS_COLLECT_DIR@/usr/lib/systemd/system-shutdown/.keep']
+      - args: ['touch', '@THIS_COLLECT_DIR@/usr/lib/systemd/system-sleep/.keep']
+      - args: ['touch', '@THIS_COLLECT_DIR@/usr/lib/systemd/user-generators/.keep']
+      - args: ['touch', '@THIS_COLLECT_DIR@/etc/kernel/install.d/.keep']
+      - args: ['touch', '@THIS_COLLECT_DIR@/etc/systemd/system/.keep']
+      - args: ['touch', '@THIS_COLLECT_DIR@/etc/systemd/user/.keep']
+      - args: ['touch', '@THIS_COLLECT_DIR@/etc/udev/rules.d/.keep']
+      - args: ['touch', '@THIS_COLLECT_DIR@/etc/sysctl.d/.keep']
+      - args: ['touch', '@THIS_COLLECT_DIR@/var/lib/systemd/.keep']
+      - args: ['touch', '@THIS_COLLECT_DIR@/var/log/journal/.keep']
+
   - name: usbutils
     architecture: '@OPTION:arch@'
     metadata:
